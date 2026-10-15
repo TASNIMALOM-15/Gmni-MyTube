@@ -8,7 +8,10 @@ import com.example.data.model.DownloadItem
 import com.example.data.model.DownloadStatus
 import com.example.data.model.PlaylistEntity
 import com.example.data.model.VideoEntity
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -21,6 +24,8 @@ class VideoRepository(
     private val downloadDao: DownloadDao,
     private val linkResolver: LinkResolver = LinkResolver()
 ) {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val allVideos: Flow<List<VideoEntity>> = videoDao.getAllVideos()
     val favoriteVideos: Flow<List<VideoEntity>> = videoDao.getFavoriteVideos()
@@ -66,7 +71,30 @@ class VideoRepository(
         )
 
         videoDao.insertVideo(video)
+        // ভিডিও লিস্টে সাথে সাথে দেখা যাবে; থাম্বনেল তৈরি হলেই বসে যাবে
+        if (thumb.isBlank()) makeThumbnailAsync(video)
         Result.success(video)
+    }
+
+    private fun makeThumbnailAsync(video: VideoEntity) {
+        scope.launch {
+            val source = video.localFilePath?.takeIf { File(it).exists() } ?: video.streamUrl
+            val path = ThumbnailGenerator.generate(context, video.id, source)
+            if (path != null) videoDao.updateThumbnail(video.id, path)
+        }
+    }
+
+    /** আগের যেসব ভিডিওর থাম্বনেল নেই, সেগুলোর জন্য একটা একটা করে বানায়। */
+    fun backfillThumbnails() {
+        scope.launch {
+            videoDao.getAllVideosSnapshot()
+                .filter { it.thumbnailUrl.isBlank() }
+                .forEach { v ->
+                    val source = v.localFilePath?.takeIf { File(it).exists() } ?: v.streamUrl
+                    val path = ThumbnailGenerator.generate(context, v.id, source)
+                    if (path != null) videoDao.updateThumbnail(v.id, path)
+                }
+        }
     }
 
     suspend fun toggleFavorite(videoId: String) = withContext(Dispatchers.IO) {
@@ -89,6 +117,9 @@ class VideoRepository(
         val download = downloadDao.getDownloadByVideoId(video.id)
         if (download != null) {
             downloadDao.deleteDownload(download)
+        }
+        if (video.thumbnailUrl.startsWith("/")) {
+            File(video.thumbnailUrl).delete()
         }
         videoDao.deleteVideo(video)
     }
