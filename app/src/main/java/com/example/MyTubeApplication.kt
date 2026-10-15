@@ -30,6 +30,7 @@ class MyTubeApplication : Application() {
             playlistDao = database.playlistDao(),
             downloadDao = database.downloadDao()
         )
+        videoRepository.backfillThumbnails()
         telegramSyncRepository = TelegramSyncRepository(
             videoDao = database.videoDao(),
             playlistDao = database.playlistDao(),
