@@ -40,7 +40,10 @@ interface VideoDao {
 
     @Query("UPDATE videos SET lastPositionMs = :position WHERE id = :id")
     suspend fun updatePlaybackPosition(id: String, position: Long)
-
+    
+    @Query("UPDATE videos SET thumbnailUrl = :thumb WHERE id = :id")
+    suspend fun updateThumbnail(id: String, thumb: String)
+    
     @Query("UPDATE videos SET isFavorite = :isFav WHERE id = :id")
     suspend fun updateFavorite(id: String, isFav: Boolean)
 
