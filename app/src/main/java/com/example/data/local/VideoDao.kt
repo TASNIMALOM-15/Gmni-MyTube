@@ -43,7 +43,7 @@ interface VideoDao {
 
     @Query("UPDATE videos SET thumbnailUrl = :thumb WHERE id = :id")
     suspend fun updateThumbnail(id: String, thumb: String)
-
+    
     @Query("UPDATE videos SET isFavorite = :isFav WHERE id = :id")
     suspend fun updateFavorite(id: String, isFav: Boolean)
 
