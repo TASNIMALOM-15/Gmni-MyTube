@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import java.io.File
 import com.example.data.model.PlaylistEntity
 import com.example.data.model.VideoEntity
 import com.example.ui.components.GlassCard
@@ -311,7 +312,7 @@ fun VideoGridCard(
             ) {
                 if (video.thumbnailUrl.isNotBlank()) {
                     AsyncImage(
-                        model = video.thumbnailUrl,
+                        model = if (video.thumbnailUrl.startsWith("/")) File(video.thumbnailUrl) else video.thumbnailUrl,
                         contentDescription = video.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -456,7 +457,7 @@ fun VideoListCard(
             ) {
                 if (video.thumbnailUrl.isNotBlank()) {
                     AsyncImage(
-                        model = video.thumbnailUrl,
+                        model = if (video.thumbnailUrl.startsWith("/")) File(video.thumbnailUrl) else video.thumbnailUrl,
                         contentDescription = video.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -482,144 +483,4 @@ fun VideoListCard(
                 }
 
                 if (video.isDownloaded) {
-                    Surface(
-                        color = StatusSuccess,
-                        shape = RoundedCornerShape(3.dp),
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .align(Alignment.TopStart)
-                    ) {
-                        Text(
-                            text = "OFFLINE",
-                            color = Color.Black,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = video.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = video.sourceDomain.ifBlank { "Direct Stream" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp
-                )
-            }
-
-            IconButton(onClick = onToggleFav) {
-                Icon(
-                    imageVector = if (video.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Favorite",
-                    tint = if (video.isFavorite) NeonRed else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Menu",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                VideoActionDropdown(
-                    expanded = showMenu,
-                    onDismiss = { showMenu = false },
-                    isFavorite = video.isFavorite,
-                    isDownloaded = video.isDownloaded,
-                    playlists = playlists,
-                    onToggleFav = onToggleFav,
-                    onDownload = onDownload,
-                    onAddToPlaylist = onAddToPlaylist,
-                    onDelete = onDelete
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun VideoActionDropdown(
-    expanded: Boolean,
-    onDismiss: () -> Unit,
-    isFavorite: Boolean,
-    isDownloaded: Boolean,
-    playlists: List<PlaylistEntity>,
-    onToggleFav: () -> Unit,
-    onDownload: () -> Unit,
-    onAddToPlaylist: (String) -> Unit,
-    onDelete: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        DropdownMenuItem(
-            text = { Text(if (isFavorite) "প্রিয় তালিকা থেকে মুছুন" else "প্রিয়তে যুক্ত করুন") },
-            leadingIcon = {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
-                    contentDescription = null,
-                    tint = NeonRed
-                )
-            },
-            onClick = {
-                onToggleFav()
-                onDismiss()
-            }
-        )
-
-        if (!isDownloaded) {
-            DropdownMenuItem(
-                text = { Text("ডাউনলোড করুন") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Download, contentDescription = null, tint = CyanPrimary)
-                },
-                onClick = {
-                    onDownload()
-                    onDismiss()
-                }
-            )
-        }
-
-        if (playlists.isNotEmpty()) {
-            playlists.forEach { playlist ->
-                DropdownMenuItem(
-                    text = { Text("+ ${playlist.name} প্লেলিস্ট") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.PlaylistAdd, contentDescription = null)
-                    },
-                    onClick = {
-                        onAddToPlaylist(playlist.name)
-                        onDismiss()
-                    }
-                )
-            }
-        }
-
-        DropdownMenuItem(
-            text = { Text("মুছে ফেলুন", color = NeonRed) },
-            onClick = {
-                onDelete()
-                onDismiss()
-            }
-        )
-    }
-}
+         
